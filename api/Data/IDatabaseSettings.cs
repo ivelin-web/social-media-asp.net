@@ -1,6 +1,6 @@
 ﻿namespace api.Data
 {
-    public class DatabaseSettings : IDatabaseSettings
+    public interface IDatabaseSettings
     {
         public string ConnectionString { get; set; }
 

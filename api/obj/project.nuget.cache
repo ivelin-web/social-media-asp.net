@@ -1,9 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "5R1mt9BnFb92rxf7WeNkJi//GWnNKiW02boOjRakUbf8FH/nNWAdOBIhPSsHziexQVU6GbhJDzvmqeJx0mHHVg==",
+  "dgSpecHash": "KCaIzlsoJMt/U47X008Nms9AWPhGJ3rn42aSu06BJ/t/0wy0WPtn/TA47J4gvUPS53Wy9H672qv83agWnVG0Mw==",
   "success": true,
   "projectFilePath": "D:\\Projects\\ASP.NET-Project\\social-media\\api\\api.csproj",
   "expectedPackageFiles": [
+    "C:\\Users\\Ivo-Dev\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512",
     "C:\\Users\\Ivo-Dev\\.nuget\\packages\\dnsclient\\1.6.0\\dnsclient.1.6.0.nupkg.sha512",
     "C:\\Users\\Ivo-Dev\\.nuget\\packages\\microsoft.aspnetcore.authentication.jwtbearer\\6.0.5\\microsoft.aspnetcore.authentication.jwtbearer.6.0.5.nupkg.sha512",
     "C:\\Users\\Ivo-Dev\\.nuget\\packages\\microsoft.csharp\\4.5.0\\microsoft.csharp.4.5.0.nupkg.sha512",

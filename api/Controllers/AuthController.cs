@@ -24,9 +24,35 @@
             this._usersCollection = database.GetCollection<User>(databaseSettings.UserCollectionName);
         }
 
+        // POST: api/<AuthController>/user
+        [HttpGet("user")]
+        [Authorize]
+        public IActionResult GetAuthUser()
+        {
+            try
+            {
+                // Get user id from jwt payload
+                ClaimsIdentity identity = HttpContext.User.Identity as ClaimsIdentity;
+                string userId = identity.Claims.FirstOrDefault(o => o.Type == "_id").Value;
+
+                User user = this._usersCollection.Find(u => u.Id == userId).FirstOrDefault();
+
+                if (user == null)
+                {
+                    throw new Exception("something went wrong");
+                }
+
+                return Ok(user);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, new { message = e.Message });
+            }
+        }
+
         // POST: api/<AuthController>/register
         [HttpPost("register")]
-        public IActionResult Register([FromBody] UserRegister user)
+        public IActionResult Register(UserRegister user)
         {
             try
             {
@@ -63,54 +89,60 @@
         [HttpPost("login")]
         public IActionResult Login(UserLogin userLogin)
         {
-            object invalidEmailOrPassword = new
+            try
             {
-                message = "Wrong email or password"
-            };
-            User? user = this._usersCollection.Find(u => u.Email == userLogin.Email).FirstOrDefault();
+                object invalidEmailOrPassword = new
+                {
+                    message = "Wrong email or password"
+                };
+                User? user = this._usersCollection.Find(u => u.Email == userLogin.Email).FirstOrDefault();
 
-            // Invalid email
-            if (user == null)
-            {
-                return NotFound(invalidEmailOrPassword);
+                // Invalid email
+                if (user == null)
+                {
+                    return NotFound(invalidEmailOrPassword);
+                }
+
+                bool isValidPassword = BCrypt.Net.BCrypt.Verify(userLogin.Password, user.Password);
+
+                // Invalid password
+                if (!isValidPassword)
+                {
+                    return NotFound(invalidEmailOrPassword);
+                }
+
+                string jwtToken = this.GenerateJwt(user);
+
+                CookieOptions cookieOptions = new CookieOptions();
+                cookieOptions.Expires = new DateTimeOffset(DateTime.Now.AddDays(1));
+                cookieOptions.HttpOnly = true;
+
+                Response.Cookies.Append("token", jwtToken, cookieOptions);
+                return Ok(new { message = "You have been logged in successfully" });
             }
-
-            bool isValidPassword = BCrypt.Net.BCrypt.Verify(userLogin.Password, user.Password);
-
-            // Invalid password
-            if (!isValidPassword)
+            catch (Exception e)
             {
-                return NotFound(invalidEmailOrPassword);
+                return StatusCode(500, new { message = e.Message });
             }
-
-            string jwtToken = this.GenerateJwt(user);
-
-            return Ok(new { message = "You have been logged in successfully", token = jwtToken });
         }
 
-        // GET api/<AuthController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
+        // POST: api/<AuthController>/logout
+        [HttpPost("logout")]
+        [Authorize]
+        public IActionResult Logout()
         {
-            return "value";
-        }
+            try
+            {
+                CookieOptions cookieOptions = new CookieOptions();
+                cookieOptions.Expires = DateTime.Now.AddDays(-1);
 
-        // POST api/<AuthController>
-        [HttpPost]
-        public void Post([FromBody] string value)
-        {
-        }
-
-        // PUT api/<AuthController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/<AuthController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
+                Response.Cookies.Append("token", "", cookieOptions);    
+                return Ok(new { message = "You have been logged out successfully" });
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, new { message = e.Message });
+            }
         }
 
         private string GenerateJwt(User user)

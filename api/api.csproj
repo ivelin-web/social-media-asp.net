@@ -15,4 +15,9 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.19.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Resources\Images\Post\" />
+    <Folder Include="Resources\Images\Person\" />
+  </ItemGroup>
+
 </Project>

@@ -1,5 +1,7 @@
 using api.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
@@ -42,6 +44,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         return context.Response.WriteAsJsonAsync(new { message = "You are not logged in user" });
     };
 });
+builder.Services.Configure<FormOptions>(option =>
+{
+    option.ValueLengthLimit = int.MaxValue;
+    option.MultipartBodyLengthLimit = int.MaxValue;
+    option.MemoryBufferThreshold = int.MaxValue;
+});
 builder.Services.AddControllers(options =>
 {
     options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
@@ -56,6 +64,12 @@ var app = builder.Build();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions()
+{
+    FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), @"Resources")),
+    RequestPath = new PathString("")
+});
 
 // Run the application
 app.Run();

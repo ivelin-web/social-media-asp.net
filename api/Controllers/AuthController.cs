@@ -24,7 +24,7 @@
             this._usersCollection = database.GetCollection<User>(databaseSettings.UserCollectionName);
         }
 
-        // POST: api/<AuthController>/user
+        // GET: api/<AuthController>/user
         [HttpGet("user")]
         [Authorize]
         public IActionResult GetAuthUser()

@@ -148,6 +148,106 @@
             }
         }
 
+        // PUT: api/<UsersController>/{id}/follow
+        [HttpPut("{id}/follow")]
+        [Authorize]
+        public IActionResult Follow(string id)
+        {
+            try
+            {
+                // Get user id from jwt payload
+                ClaimsIdentity identity = HttpContext.User.Identity as ClaimsIdentity;
+                string userId = identity.Claims.FirstOrDefault(o => o.Type == "_id").Value;
+
+                if (userId == id)
+                {
+                    return StatusCode(403, new { message = "You can't follow yourself" });
+                }
+
+                User currentUser = this._usersCollection.Find(u => u.Id == userId).FirstOrDefault();
+                User otherUser = this._usersCollection.Find(u => u.Id == id).FirstOrDefault();
+
+                bool isFollowed = otherUser.Followers.Where(uId => uId == userId).FirstOrDefault() != null;
+
+                if (isFollowed)
+                {
+                    return StatusCode(403, new { message = "You already follow this user" });
+                }
+
+                // Add other user to current user followings
+                List<string> following = currentUser.Following;
+                following.Add(id);
+
+                // Add current user to other user followers
+                List<string> followers = otherUser.Followers;
+                followers.Add(userId);
+
+                // Update current user following
+                var updateCurrent = Builders<User>.Update.Set("following", following);
+                this._usersCollection.UpdateOne(u => u.Id == userId, updateCurrent);
+
+                // Update other user followers
+                var updateOther = Builders<User>.Update.Set("followers", followers);
+                this._usersCollection.UpdateOne(u => u.Id == id, updateOther);
+
+                return Ok(new { message = "User has been followed successfully" });
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, new { message = e.Message });
+            }
+        }
+
+        // PUT: api/<UsersController>/{id}/unfollow
+        [HttpPut("{id}/unfollow")]
+        [Authorize]
+        public IActionResult Unfollow(string id)
+        {
+            try
+            {
+                // Get user id from jwt payload
+                ClaimsIdentity identity = HttpContext.User.Identity as ClaimsIdentity;
+                string userId = identity.Claims.FirstOrDefault(o => o.Type == "_id").Value;
+
+                if (userId == id)
+                {
+                    return StatusCode(403, new { message = "You can't unfollow yourself" });
+                }
+
+                User currentUser = this._usersCollection.Find(u => u.Id == userId).FirstOrDefault();
+                User otherUser = this._usersCollection.Find(u => u.Id == id).FirstOrDefault();
+
+                bool isFollowed = otherUser.Followers.Where(uId => uId == userId).FirstOrDefault() != null;
+
+                if (!isFollowed)
+                {
+                    return StatusCode(403, new { message = "You don't follow this user" });
+                }
+
+                // Remove other user to current user followings
+                List<string> following = currentUser.Following;
+                following.Remove(id);
+
+                // Remove current user to other user followers
+                List<string> followers = otherUser.Followers;
+                followers.Remove(userId);
+
+                // Update current user following
+                var updateCurrent = Builders<User>.Update.Set("following", following);
+                this._usersCollection.UpdateOne(u => u.Id == userId, updateCurrent);
+
+                // Update other user followers
+                var updateOther = Builders<User>.Update.Set("followers", followers);
+                this._usersCollection.UpdateOne(u => u.Id == id, updateOther);
+
+                return Ok(new { message = "User has been unfollowed successfully" });
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, new { message = e.Message });
+            }
+        }
+
         private void UpdateUserProperties(User updatedUser, UserUpdate user)
         {
             var destinationProperties = updatedUser.GetType().GetProperties();

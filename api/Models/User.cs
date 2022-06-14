@@ -1,4 +1,6 @@
-﻿namespace api.Models
+﻿using MongoDB.Bson;
+
+namespace api.Models
 {
     using MongoDB.Bson.Serialization.Attributes;
     using System.ComponentModel.DataAnnotations;
@@ -7,17 +9,22 @@
     {
         private const string defaultRelationship = "Single";
 
+        public User()
+        {
+
+        }
+
         public User(string email, string username, string password)
         {
             this.Email = email;
-            this.Username = username;   
+            this.Username = username;
             this.Password = password;
         }
 
         [BsonId]
         [BsonElement("_id")]
         [BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
-        public string Id { get; set; }
+        public string Id { get; set; } = ObjectId.GenerateNewId().ToString();
 
         [BsonElement("username")]
         [Required]

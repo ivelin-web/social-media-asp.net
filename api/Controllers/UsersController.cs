@@ -118,23 +118,63 @@
             }
         }
 
-        // GET api/<UsersController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
-        {
-            return "value";
-        }
-
-        // POST api/<UsersController>
-        [HttpPost]
-        public void Post([FromBody] string value)
-        {
-        }
-
-        // PUT api/<UsersController>/5
+        // PUT: api/<UsersController>/{id}
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        [Authorize]
+        public IActionResult Update(string id, UserUpdate user)
         {
+            try
+            {
+                // Get user id from jwt payload
+                ClaimsIdentity identity = HttpContext.User.Identity as ClaimsIdentity;
+                string userId = identity.Claims.FirstOrDefault(o => o.Type == "_id").Value;
+
+                if (userId != id)
+                {
+                    return StatusCode(403, new { message = "You can update only your account" });
+                }
+
+                User updatedUser = this._usersCollection.Find(u => u.Id == userId).FirstOrDefault();
+
+                // Update user properties from request body
+                this.UpdateUserProperties(updatedUser, user);
+                this._usersCollection.ReplaceOne(u => u.Id == userId, updatedUser);
+
+                return Ok(updatedUser);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, new { message = e.Message });
+            }
+        }
+
+        private void UpdateUserProperties(User updatedUser, UserUpdate user)
+        {
+            var destinationProperties = updatedUser.GetType().GetProperties();
+
+            foreach (var sourceProp in user.GetType().GetProperties())
+            {
+                foreach (var destProp in destinationProperties)
+                {
+                    if (sourceProp.Name != destProp.Name)
+                    {
+                        continue;
+                    }
+
+                    if (sourceProp.GetValue(user) == null)
+                    {
+                        continue;
+                    }
+
+                    if (sourceProp.Name == "Password")
+                    {
+                        var hashedPassword = BCrypt.Net.BCrypt.HashPassword(user.Password);
+                        user.Password = hashedPassword;
+                    }
+
+                    destProp.SetValue(updatedUser, sourceProp.GetValue(user));
+                }
+            }
         }
     }
 }

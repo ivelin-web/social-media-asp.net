@@ -1,27 +1,37 @@
-﻿using MongoDB.Bson.Serialization.Attributes;
-
-namespace api.Models
+﻿namespace api.Models
 {
+    using MongoDB.Bson;
+    using MongoDB.Bson.Serialization.Attributes;
+    using System.ComponentModel.DataAnnotations;
+
     public class Post
     {
         [BsonId]
         [BsonElement("_id")]
         [BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
-        public string Id { get; set; }
+        public string Id { get; set; } = ObjectId.GenerateNewId().ToString();
 
+        [BsonElement("userId")]
         [BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
         public string UserId { get; set; }
 
+        [BsonElement("description")]
+        [MaxLength(500)]
+        [MinLength(3)]
         public string Description { get; set; }
 
+        [BsonElement("likes")]
         [BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
-        public List<string> Likes { get; set; }
+        public List<string> Likes { get; set; } = new List<string>();
 
-        public List<Object> Comments { get; set; }
+        [BsonElement("comments")]
+        public List<Comment> Comments { get; set; } = new List<Comment>();
 
-        public string Img { get; set; }
+        [BsonElement("img")]
+        public string Img { get; set; } 
 
-        public DateTime CreatedAt { get; set; }
+        [BsonElement("createdAt")]
+        public string CreatedAt { get; set; } = DateTime.Now.ToString("yyyyMMddHHmmssffff");
 
     }
 }

@@ -6,6 +6,7 @@
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using MongoDB.Driver;
+    using System.Linq;
     using System.Security.Claims;
 
     [Route("api/[controller]")]
@@ -138,6 +139,80 @@
                 var result = this._postsCollection.DeleteOne(p => p.Id == post.Id);
 
                 return Ok(new { message = "Post has been deleted successfully" });
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, new { message = e.Message });
+            }
+        }
+
+        // PUT: api/<PostsController>/{id}/like
+        [HttpPut("{id}/like")]
+        [Authorize]
+        public IActionResult Like(string id)
+        {
+            try
+            {
+                // Get user id from jwt payload
+                ClaimsIdentity identity = HttpContext.User.Identity as ClaimsIdentity;
+                string userId = identity.Claims.FirstOrDefault(o => o.Type == "_id").Value;
+
+                Post post = this._postsCollection.Find(p => p.Id == id).FirstOrDefault();
+                bool isPostLiked = post.Likes.Any(uId => uId == userId);
+
+                // Dislike post 
+                if (isPostLiked)
+                {
+                    post.Likes.Remove(userId);
+                    var updateDislike = Builders<Post>.Update.Set("likes", post.Likes);
+                    this._postsCollection.UpdateOne(p => p.Id == id, updateDislike);
+
+                    return Ok(new { message = "Post has been disliked successfully" });
+                }
+
+                post.Likes.Add(userId);
+                var updateLike = Builders<Post>.Update.Set("likes", post.Likes);
+                this._postsCollection.UpdateOne(p => p.Id == id, updateLike);
+
+                return Ok(new { message = "Post has been liked successfully" });
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, new { message = e.Message });
+            }
+        }
+
+        // GET: api/<PostsController>/timeline
+        [HttpGet("timeline")]
+        [Authorize]
+        public IActionResult Timeline()
+        {
+            try
+            {
+                // Get user id from jwt payload
+                ClaimsIdentity identity = HttpContext.User.Identity as ClaimsIdentity;
+                string userId = identity.Claims.FirstOrDefault(o => o.Type == "_id").Value;
+
+                User currentUser = this._usersCollection.Find(u => u.Id == userId).FirstOrDefault();
+                List<Post> userPosts = this._postsCollection.Find(p => p.UserId == userId).ToList();
+                List<Post> friendPosts = new List<Post>();
+
+                // Add all friend posts
+                foreach (var friendId in currentUser.Following)
+                {
+                    Post newPost = this._postsCollection.Find(p => p.UserId == friendId).FirstOrDefault();
+
+                    if (newPost == null)
+                    {
+                        continue;
+                    }
+
+                    friendPosts.Add(newPost);
+                }
+
+                List<Post> allPosts = userPosts.Concat(friendPosts).ToList();
+
+                return Ok(allPosts);
             }
             catch (Exception e)
             {

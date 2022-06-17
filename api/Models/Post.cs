@@ -31,7 +31,6 @@
         public string Img { get; set; } 
 
         [BsonElement("createdAt")]
-        public string CreatedAt { get; set; } = DateTime.Now.ToString("yyyyMMddHHmmssffff");
-
+        public string CreatedAt { get; set; } = Convert.ToString((int)DateTime.Now.Subtract(new DateTime(1970, 1, 1)).TotalSeconds);
     }
 }

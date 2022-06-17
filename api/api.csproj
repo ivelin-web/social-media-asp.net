@@ -16,8 +16,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Resources\Images\Post\" />
-    <Folder Include="Resources\Images\Person\" />
+    <Folder Include="Resources\images\post\" />
+    <Folder Include="Resources\images\person\" />
   </ItemGroup>
 
 </Project>

@@ -16,7 +16,7 @@
         {
             try
             {
-                return this.UploadFile("Person");
+                return this.UploadFile("person");
             }
             catch (Exception e)
             {
@@ -32,7 +32,7 @@
         {
             try
             {
-                return this.UploadFile("Post");
+                return this.UploadFile("post");
             }
             catch (Exception e)
             {
@@ -43,7 +43,7 @@
         private IActionResult UploadFile(string entity)
         {
             IFormFile file = Request.Form.Files[0];
-            string? folderName = Path.Combine("Resources", "Images", entity);
+            string? folderName = Path.Combine("Resources", "images", entity);
             string? pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
 
             if (file.Length > 0)

@@ -1,5 +1,6 @@
 ﻿namespace api.Controllers
 {
+    using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
     using System.Net.Http.Headers;
 
@@ -9,6 +10,7 @@
         // POST: api/<UploadController>
         [HttpPost]
         [Route("api/users/[controller]")]
+        [Authorize]
 
         public IActionResult UploadUserImage()
         {
@@ -25,6 +27,7 @@
         // POST: api/<UploadController>
         [HttpPost]
         [Route("api/posts/[controller]")]
+        [Authorize]
         public IActionResult UploadPostImage()
         {
             try

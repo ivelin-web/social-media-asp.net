@@ -33,7 +33,7 @@
             try
             {
                 User user = this._usersCollection.Find(u => u.Username == username).FirstOrDefault();
-                List<Post> posts = this._postsCollection.Find(p => p.UserId == user.Id).ToList();
+                List<Post> posts = this._postsCollection.Find(p => p.UserId == user._id).ToList();
 
                 return Ok(posts);
             }
@@ -50,7 +50,7 @@
         {
             try
             {
-                List<Post> posts = this._postsCollection.Find(p => p.Id == id).ToList();
+                List<Post> posts = this._postsCollection.Find(p => p._id == id).ToList();
 
                 return Ok(posts);
             }
@@ -99,7 +99,7 @@
                 ClaimsIdentity identity = HttpContext.User.Identity as ClaimsIdentity;
                 string userId = identity.Claims.FirstOrDefault(o => o.Type == "_id").Value;
 
-                Post updatedPost = this._postsCollection.Find(p => p.Id == id).FirstOrDefault();
+                Post updatedPost = this._postsCollection.Find(p => p._id == id).FirstOrDefault();
 
                 if (updatedPost.UserId != userId)
                 {
@@ -108,7 +108,7 @@
 
                 // Update post properties from request body
                 this.UpdatePostProperties(updatedPost, post);
-                this._postsCollection.ReplaceOne(p => p.Id == updatedPost.Id, updatedPost);
+                this._postsCollection.ReplaceOne(p => p._id == updatedPost._id, updatedPost);
 
                 return Ok(updatedPost);
             }
@@ -129,14 +129,14 @@
                 ClaimsIdentity identity = HttpContext.User.Identity as ClaimsIdentity;
                 string userId = identity.Claims.FirstOrDefault(o => o.Type == "_id").Value;
 
-                Post post = this._postsCollection.Find(p => p.Id == id).FirstOrDefault();
+                Post post = this._postsCollection.Find(p => p._id == id).FirstOrDefault();
 
                 if (post.UserId != userId)
                 {
                     return StatusCode(403, new { message = "You can delete only your posts" });
                 }
 
-                var result = this._postsCollection.DeleteOne(p => p.Id == post.Id);
+                var result = this._postsCollection.DeleteOne(p => p._id == post._id);
 
                 return Ok(new { message = "Post has been deleted successfully" });
             }
@@ -157,7 +157,7 @@
                 ClaimsIdentity identity = HttpContext.User.Identity as ClaimsIdentity;
                 string userId = identity.Claims.FirstOrDefault(o => o.Type == "_id").Value;
 
-                Post post = this._postsCollection.Find(p => p.Id == id).FirstOrDefault();
+                Post post = this._postsCollection.Find(p => p._id == id).FirstOrDefault();
                 bool isPostLiked = post.Likes.Any(uId => uId == userId);
 
                 // Dislike post 
@@ -165,14 +165,14 @@
                 {
                     post.Likes.Remove(userId);
                     var updateDislike = Builders<Post>.Update.Set("likes", post.Likes);
-                    this._postsCollection.UpdateOne(p => p.Id == id, updateDislike);
+                    this._postsCollection.UpdateOne(p => p._id == id, updateDislike);
 
                     return Ok(new { message = "Post has been disliked successfully" });
                 }
 
                 post.Likes.Add(userId);
                 var updateLike = Builders<Post>.Update.Set("likes", post.Likes);
-                this._postsCollection.UpdateOne(p => p.Id == id, updateLike);
+                this._postsCollection.UpdateOne(p => p._id == id, updateLike);
 
                 return Ok(new { message = "Post has been liked successfully" });
             }
@@ -193,7 +193,7 @@
                 ClaimsIdentity identity = HttpContext.User.Identity as ClaimsIdentity;
                 string userId = identity.Claims.FirstOrDefault(o => o.Type == "_id").Value;
 
-                User currentUser = this._usersCollection.Find(u => u.Id == userId).FirstOrDefault();
+                User currentUser = this._usersCollection.Find(u => u._id == userId).FirstOrDefault();
                 List<Post> userPosts = this._postsCollection.Find(p => p.UserId == userId).ToList();
                 List<Post> friendPosts = new List<Post>();
 
@@ -213,6 +213,136 @@
                 List<Post> allPosts = userPosts.Concat(friendPosts).ToList();
 
                 return Ok(allPosts);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, new { message = e.Message });
+            }
+        }
+
+        // GET: api/<PostsController>/{id}/comments
+        [HttpGet("{id}/comments")]
+        [Authorize]
+        public IActionResult GetAllCommentsByPost(string id)
+        {
+            try
+            {
+                Post post = this._postsCollection.Find(p => p._id == id).FirstOrDefault();
+                List<Comment> comments = post.Comments;
+
+                return Ok(comments);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, new { message = e.Message });
+            }
+        }
+
+        // POST: api/<PostsController>/{id}/comments
+        [HttpPost("{id}/comments")]
+        [Authorize]
+        public IActionResult AddComment(string id, Comment comment)
+        {
+            try
+            {
+                // Get user id from jwt payload
+                ClaimsIdentity identity = HttpContext.User.Identity as ClaimsIdentity;
+                string userId = identity.Claims.FirstOrDefault(o => o.Type == "_id").Value;
+
+                Post post = this._postsCollection.Find(p => p._id == id).FirstOrDefault();
+                comment.Owner = userId;
+                post.Comments.Add(comment);
+
+                var update = Builders<Post>.Update.Set("comments", post.Comments);
+                this._postsCollection.UpdateOne(p => p._id == id, update);
+
+                return Ok(post);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, new { message = e.Message });
+            }
+        }
+
+        // PUT: api/<PostsController>/{id}/comments/{commentId}
+        [HttpPut("{id}/comments/{commentId}")]
+        [Authorize]
+        public IActionResult EditComment(string id, string commentId, Comment comment)
+        {
+            try
+            {
+                // Get user id from jwt payload
+                ClaimsIdentity identity = HttpContext.User.Identity as ClaimsIdentity;
+                string userId = identity.Claims.FirstOrDefault(o => o.Type == "_id").Value;
+
+                Post post = this._postsCollection.Find(p => p._id == id).FirstOrDefault();
+                Comment updatedComment = post.Comments.Find(c => c._id == commentId);
+
+                if (updatedComment.Owner != userId)
+                {
+                    return StatusCode(403, new { message = "You can update only your comments" });
+                }
+
+                List<Comment> updatedComments = new List<Comment>();
+
+                foreach (var currentComment in post.Comments)
+                {
+                    // If current comment = comment which need to be updated, then update
+                    if (currentComment._id == commentId)
+                    {
+                        updatedComments.Add(new Comment
+                        {
+                            _id = currentComment._id,
+                            Text = comment.Text,
+                            Owner = userId,
+                            CreatedAt = currentComment.CreatedAt
+                        });
+
+                        continue;
+                    }
+
+                    updatedComments.Add(currentComment);
+                }
+
+                post.Comments = updatedComments;
+
+                var update = Builders<Post>.Update.Set("comments", post.Comments);
+                this._postsCollection.UpdateOne(p => p._id == id, update);
+
+                return Ok(post);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, new { message = e.Message });
+            }
+        }
+
+        // DELETE: api/<PostsController>/{id}/comments/{commentId}
+        [HttpDelete("{id}/comments/{commentId}")]
+        [Authorize]
+        public IActionResult DeleteComment(string id, string commentId)
+        {
+            try
+            {
+                // Get user id from jwt payload
+                ClaimsIdentity identity = HttpContext.User.Identity as ClaimsIdentity;
+                string userId = identity.Claims.FirstOrDefault(o => o.Type == "_id").Value;
+
+                Post post = this._postsCollection.Find(p => p._id == id).FirstOrDefault();
+                Comment comment = post.Comments.Find(c => c._id == commentId);
+
+                if (comment.Owner != userId)
+                {
+                    return StatusCode(403, new { message = "You can delete only your comments" });
+                }
+
+                List<Comment> updatedComments = post.Comments.Where(c => c._id != commentId).ToList();
+                post.Comments = updatedComments;
+
+                var update = Builders<Post>.Update.Set("comments", post.Comments);
+                this._postsCollection.UpdateOne(p => p._id == id, update);
+
+                return Ok(new { message = "Comment has been deleted successfully" });
             }
             catch (Exception e)
             {

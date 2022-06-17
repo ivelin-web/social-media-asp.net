@@ -42,7 +42,7 @@
                 // Find user by id
                 else
                 {
-                    User user = this._usersCollection.Find(u => u.Id == id).FirstOrDefault();
+                    User user = this._usersCollection.Find(u => u._id == id).FirstOrDefault();
 
                     return Ok(user);
                 }
@@ -79,10 +79,10 @@
         {
             try
             {
-                User user = this._usersCollection.Find(u => u.Id == id).FirstOrDefault();
+                User user = this._usersCollection.Find(u => u._id == id).FirstOrDefault();
 
                 List<User> friends = user.Following
-                    .Select(id => this._usersCollection.Find(u => u.Id == id).FirstOrDefault()).ToList<User>();
+                    .Select(id => this._usersCollection.Find(u => u._id == id).FirstOrDefault()).ToList<User>();
 
                 return Ok(friends);
             }
@@ -108,7 +108,7 @@
                     return StatusCode(403, new { message = "You can delete only your account" });
                 }
 
-                var result = this._usersCollection.DeleteOne(u => u.Id == userId);
+                var result = this._usersCollection.DeleteOne(u => u._id == userId);
 
                 return Ok(new { message = "Account has been deleted successfully" });
             }
@@ -134,11 +134,11 @@
                     return StatusCode(403, new { message = "You can update only your account" });
                 }
 
-                User updatedUser = this._usersCollection.Find(u => u.Id == userId).FirstOrDefault();
+                User updatedUser = this._usersCollection.Find(u => u._id == userId).FirstOrDefault();
 
                 // Update user properties from request body
                 this.UpdateUserProperties(updatedUser, user);
-                this._usersCollection.ReplaceOne(u => u.Id == userId, updatedUser);
+                this._usersCollection.ReplaceOne(u => u._id == userId, updatedUser);
 
                 return Ok(updatedUser);
             }
@@ -164,8 +164,8 @@
                     return StatusCode(403, new { message = "You can't follow yourself" });
                 }
 
-                User currentUser = this._usersCollection.Find(u => u.Id == userId).FirstOrDefault();
-                User otherUser = this._usersCollection.Find(u => u.Id == id).FirstOrDefault();
+                User currentUser = this._usersCollection.Find(u => u._id == userId).FirstOrDefault();
+                User otherUser = this._usersCollection.Find(u => u._id == id).FirstOrDefault();
 
                 bool isFollowed = otherUser.Followers.Where(uId => uId == userId).FirstOrDefault() != null;
 
@@ -184,11 +184,11 @@
 
                 // Update current user following
                 var updateCurrent = Builders<User>.Update.Set("following", following);
-                this._usersCollection.UpdateOne(u => u.Id == userId, updateCurrent);
+                this._usersCollection.UpdateOne(u => u._id == userId, updateCurrent);
 
                 // Update other user followers
                 var updateOther = Builders<User>.Update.Set("followers", followers);
-                this._usersCollection.UpdateOne(u => u.Id == id, updateOther);
+                this._usersCollection.UpdateOne(u => u._id == id, updateOther);
 
                 return Ok(new { message = "User has been followed successfully" });
             }
@@ -214,8 +214,8 @@
                     return StatusCode(403, new { message = "You can't unfollow yourself" });
                 }
 
-                User currentUser = this._usersCollection.Find(u => u.Id == userId).FirstOrDefault();
-                User otherUser = this._usersCollection.Find(u => u.Id == id).FirstOrDefault();
+                User currentUser = this._usersCollection.Find(u => u._id == userId).FirstOrDefault();
+                User otherUser = this._usersCollection.Find(u => u._id == id).FirstOrDefault();
 
                 bool isFollowed = otherUser.Followers.Where(uId => uId == userId).FirstOrDefault() != null;
 
@@ -234,11 +234,11 @@
 
                 // Update current user following
                 var updateCurrent = Builders<User>.Update.Set("following", following);
-                this._usersCollection.UpdateOne(u => u.Id == userId, updateCurrent);
+                this._usersCollection.UpdateOne(u => u._id == userId, updateCurrent);
 
                 // Update other user followers
                 var updateOther = Builders<User>.Update.Set("followers", followers);
-                this._usersCollection.UpdateOne(u => u.Id == id, updateOther);
+                this._usersCollection.UpdateOne(u => u._id == id, updateOther);
 
                 return Ok(new { message = "User has been unfollowed successfully" });
             }

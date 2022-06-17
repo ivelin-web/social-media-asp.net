@@ -9,7 +9,7 @@
         [BsonId]
         [BsonElement("_id")]
         [BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
-        public string Id { get; set; } = ObjectId.GenerateNewId().ToString();
+        public string _id { get; set; } = ObjectId.GenerateNewId().ToString();
 
         [BsonElement("userId")]
         [BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]

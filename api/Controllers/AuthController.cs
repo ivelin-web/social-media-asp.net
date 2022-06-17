@@ -35,7 +35,7 @@
                 ClaimsIdentity identity = HttpContext.User.Identity as ClaimsIdentity;
                 string userId = identity.Claims.FirstOrDefault(o => o.Type == "_id").Value;
 
-                User user = this._usersCollection.Find(u => u.Id == userId).FirstOrDefault();
+                User user = this._usersCollection.Find(u => u._id == userId).FirstOrDefault();
 
                 if (user == null)
                 {
@@ -73,7 +73,7 @@
                 var hashedPassword = BCrypt.Net.BCrypt.HashPassword(user.Password);
                 User newUser = new User(user.Email, user.Username, hashedPassword);
                 string uId = Guid.NewGuid().ToString("N").Substring(0, 24);
-                newUser.Id = uId;
+                newUser._id = uId;
 
                 this._usersCollection.InsertOne(newUser);
 
@@ -152,7 +152,7 @@
 
             var claims = new[]
             {
-                new Claim("_id", user.Id)
+                new Claim("_id", user._id)
             };
 
             var token = new JwtSecurityToken(claims: claims, expires: DateTime.Now.AddMinutes(60), signingCredentials: credentials);

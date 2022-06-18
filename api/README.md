@@ -1,6 +1,6 @@
 # Getting Started with ASP.NET API
 
-Use [MongoDB](https://www.mongodb.com) and [Mongoose](https://mongoosejs.com) for database.
+Use [MongoDB](https://www.mongodb.com) for database.
 
 ## Available api calls:
 
